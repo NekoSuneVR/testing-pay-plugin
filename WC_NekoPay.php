@@ -4,10 +4,10 @@ if (class_exists('WC_Payment_Gateway')) {
     class WC_NekoPay extends WC_Payment_Gateway {
 
         const CRYPTO_API_URLS = [
-            "dogecash" => "https://payment-checker.chisdealhd.co.uk/DOGEC.php",
-            "zenzo"    => "https://payment-checker.chisdealhd.co.uk/ZNZ.php",
-            "flits"    => "https://payment-checker.chisdealhd.co.uk/FLS.php",
-            "pivx"     => "https://payment-checker.chisdealhd.co.uk/PIVX.php"
+            "dogecash" => "https://widgets.nekosunevr.co.uk/Payment-Checker/DOGEC.php",
+            "zenzo"    => "https://widgets.nekosunevr.co.uk/Payment-Checker/ZNZ.php",
+            "flits"    => "https://widgets.nekosunevr.co.uk/Payment-Checker/FLS.php",
+            "pivx"     => "https://widgets.nekosunevr.co.uk/Payment-Checker/PIVX.php"
         ];
 
         public function __construct() {
