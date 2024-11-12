@@ -148,6 +148,13 @@ public function payment_fields() {
     <?php
 }
 
+
+        add_action('plugins_loaded', 'nekopay_init_payment_gateway');
+function nekopay_init_payment_gateway() {
+    require_once plugin_dir_path(__FILE__) . 'WC_NekoPay.php';
+}
+
+
         public function get_exchange_rate($crypto_type) {
             $api_url = self::CRYPTO_API_URLS[$crypto_type] ?? '';
 
