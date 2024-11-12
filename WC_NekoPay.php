@@ -40,71 +40,64 @@ if (class_exists('WC_Payment_Gateway')) {
         }
 
         public function init_form_fields() {
-            $this->form_fields = [
-                'enabled' => [
-                    'title'   => __('Enable/Disable', 'woocommerce-nekopay'),
-                    'type'    => 'checkbox',
-                    'label'   => __('Enable NekoPay Cryptocurrency Payment', 'woocommerce-nekopay'),
-                    'default' => 'yes'
-                ],
-                'title' => [
-                    'title'       => __('Method Title', 'woocommerce-nekopay'),
-                    'type'        => 'text',
-                    'default'     => __('NekoPay Cryptocurrency Payment', 'woocommerce-nekopay'),
-                    'desc_tip'    => __('The payment method title which you want to appear to the customer in the checkout page.')
-                ],
-                'description' => [
-                    'title'       => __('Payment Description', 'woocommerce-nekopay'),
-                    'type'        => 'text',
-                    'default'     => 'Please send the exact amount to the selected cryptocurrency address below.',
-                    'desc_tip'    => __('The payment description message to appear to the customer on the payment page.')
-                ],
-                'crypto_type' => [
-                    'title'       => __('Select Cryptocurrency', 'woocommerce-nekopay'),
-                    'type'        => 'select',
-                    'options'     => [
-                        'dogecash' => 'DogeCash',
-                        'zenzo'    => 'Zenzo',
-                        'flits'    => 'Flits',
-                        'pivx'     => 'PIVX'
-                    ],
-                    'default'     => 'dogecash',
-                    'desc_tip'    => __('Choose the cryptocurrency for this payment method.')
-                ],
-                'dogecash_wallet_address' => [
-                    'title'       => __('DogeCash Wallet Address', 'woocommerce-nekopay'),
-                    'type'        => 'text',
-                    'desc_tip'    => __('Enter your DogeCash wallet address for payments.')
-                ],
-                'zenzo_wallet_address' => [
-                    'title'       => __('Zenzo Wallet Address', 'woocommerce-nekopay'),
-                    'type'        => 'text',
-                    'desc_tip'    => __('Enter your Zenzo wallet address for payments.')
-                ],
-                'flits_wallet_address' => [
-                    'title'       => __('Flits Wallet Address', 'woocommerce-nekopay'),
-                    'type'        => 'text',
-                    'desc_tip'    => __('Enter your Flits wallet address for payments.')
-                ],
-                'pivx_wallet_address' => [
-                    'title'       => __('PIVX Wallet Address', 'woocommerce-nekopay'),
-                    'type'        => 'text',
-                    'desc_tip'    => __('Enter your PIVX wallet address for payments.')
-                ],
-                'confirmation_no' => [
-                    'title'       => __('Minimum Confirmations', 'woocommerce-nekopay'),
-                    'type'        => 'text',
-                    'default'     => '5',
-                    'desc_tip'    => __('Number of confirmations required for the order to be confirmed.')
-                ],
-                'max_time_limit' => [
-                    'title'       => __('Maximum Payment Time (in Minutes)', 'woocommerce-nekopay'),
-                    'type'        => 'text',
-                    'default'     => "15",
-                    'desc_tip'    => __('Time allowed for a user to make the required payment.')
-                ]
-            ];
-        }
+    $this->form_fields = array(
+        'enabled' => array(
+            'title'   => __( 'Enable/Disable', 'woocommerce-nekopay' ),
+            'type'    => 'checkbox',
+            'label'   => __( 'Enable NekoPay Cryptocurrency Payment', 'woocommerce-nekopay' ),
+            'default' => 'yes'
+        ),
+        'title' => array(
+            'title'   => __( 'Method Title', 'woocommerce-nekopay' ),
+            'type'    => 'text',
+            'default' => __( 'Cryptocurrency Payment', 'woocommerce-nekopay' ),
+            'desc_tip' => __( 'Title displayed on the checkout page.', 'woocommerce-nekopay' )
+        ),
+        'description' => array(
+            'title' => __( 'Payment Description', 'woocommerce-nekopay' ),
+            'type' => 'text',
+            'default' => 'Select a cryptocurrency to pay with and send the exact amount to the address below.',
+            'desc_tip' => __( 'Description displayed on the payment page.', 'woocommerce-nekopay' ),
+        ),
+        'payment_addresses' => array(
+            'title' => __( 'Wallet Addresses', 'woocommerce-nekopay' ),
+            'type'  => 'title',
+            'description' => __( 'Enter wallet addresses for each cryptocurrency.', 'woocommerce-nekopay' ),
+        ),
+        'dogecash_address' => array(
+            'title' => __( 'DogeCash Wallet Address', 'woocommerce-nekopay' ),
+            'type'  => 'text',
+            'desc_tip' => __( 'DogeCash wallet address.', 'woocommerce-nekopay' ),
+        ),
+        'zenzo_address' => array(
+            'title' => __( 'Zenzo Wallet Address', 'woocommerce-nekopay' ),
+            'type'  => 'text',
+            'desc_tip' => __( 'Zenzo wallet address.', 'woocommerce-nekopay' ),
+        ),
+        'flits_address' => array(
+            'title' => __( 'Flits Wallet Address', 'woocommerce-nekopay' ),
+            'type'  => 'text',
+            'desc_tip' => __( 'Flits wallet address.', 'woocommerce-nekopay' ),
+        ),
+        'pivx_address' => array(
+            'title' => __( 'PIVX Wallet Address', 'woocommerce-nekopay' ),
+            'type'  => 'text',
+            'desc_tip' => __( 'PIVX wallet address.', 'woocommerce-nekopay' ),
+        ),
+        'confirmation_no' => array(
+            'title' => __( 'Minimum Confirmations', 'woocommerce-nekopay' ),
+            'type' => 'text',
+            'default' => '5',
+            'desc_tip' => __( 'Number of confirmations for order completion.', 'woocommerce-nekopay' ),
+        ),
+        'max_time_limit' => array(
+            'title' => __( 'Maximum Payment Time (in Minutes)', 'woocommerce-nekopay' ),
+            'type' => 'text',
+            'default' => "15",
+            'desc_tip' => __( 'Time allowed for customer to complete payment.', 'woocommerce-nekopay' ),
+        ),
+    );
+}
 
         public function admin_options() {
             ?>
@@ -116,42 +109,44 @@ if (class_exists('WC_Payment_Gateway')) {
             <?php
         }
 
-        public function process_payment($order_id) {
-            global $woocommerce;
-            $order = new WC_Order($order_id);
+        // Save the selected cryptocurrency in order meta
+public function process_payment( $order_id ) {
+    $order = wc_get_order( $order_id );
+    $selected_crypto = sanitize_text_field( $_POST['nekopay_crypto_type'] );
 
-            wc_reduce_stock_levels($order_id);
-            $woocommerce->cart->empty_cart();
+    // Save the selected crypto type and related wallet address in order meta
+    $order->update_meta_data('_nekopay_crypto_type', $selected_crypto);
+    $order->update_meta_data('_nekopay_payment_address', $this->get_option("{$selected_crypto}_address"));
+    $order->save();
 
-            return [
-                'result'   => 'success',
-                'redirect' => $order->get_checkout_payment_url($on_checkout = false) . '&cp=1'
-            ];
-        }
-
-        public function payment_fields() {
-            ?>
-            <fieldset style="padding: 0.75em 0.625em 0.75em;">
-                <table>
-                    <tr style="vertical-align: middle; text-align: left;">
-                        <td width="180">
-                            <img alt="plugin logo" width="160" style="max-height: 40px;" src="<?php echo plugins_url('img/plugin-logo.png', __FILE__); ?>">
-                        </td>
-                        <td>
-                            <div>Exchange rate:</div>
-                            <strong>1 <?php echo strtoupper($this->crypto_type); ?> = <?php echo round($this->exchange_rate, 5); ?> <?php echo $this->default_currency_used; ?></strong>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="2">
-                            <div>Payment Address:</div>
-                            <strong><?php echo esc_html($this->wallet_addresses[$this->crypto_type]); ?></strong>
-                        </td>
-                    </tr>
-                </table>
-            </fieldset>
-            <?php
-        }
+    return array(
+        'result'   => 'success',
+        'redirect' => $order->get_checkout_payment_url( true ),
+    );
+}
+        // Show the crypto selection dropdown on the checkout page
+public function payment_fields() {
+    ?>
+    <fieldset>
+        <p><?php echo wpautop( esc_html( $this->get_option('description') ) ); ?></p>
+        <label for="nekopay_crypto_type"><?php _e( 'Select Cryptocurrency:', 'woocommerce-nekopay' ); ?></label>
+        <select id="nekopay_crypto_type" name="nekopay_crypto_type">
+            <?php if ( $this->get_option('dogecash_address') ) : ?>
+                <option value="dogecash"><?php _e( 'DogeCash', 'woocommerce-nekopay' ); ?></option>
+            <?php endif; ?>
+            <?php if ( $this->get_option('zenzo_address') ) : ?>
+                <option value="zenzo"><?php _e( 'Zenzo', 'woocommerce-nekopay' ); ?></option>
+            <?php endif; ?>
+            <?php if ( $this->get_option('flits_address') ) : ?>
+                <option value="flits"><?php _e( 'Flits', 'woocommerce-nekopay' ); ?></option>
+            <?php endif; ?>
+            <?php if ( $this->get_option('pivx_address') ) : ?>
+                <option value="pivx"><?php _e( 'PIVX', 'woocommerce-nekopay' ); ?></option>
+            <?php endif; ?>
+        </select>
+    </fieldset>
+    <?php
+}
 
         public function get_exchange_rate($crypto_type) {
             $api_url = self::CRYPTO_API_URLS[$crypto_type] ?? '';
