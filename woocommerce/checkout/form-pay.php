@@ -37,135 +37,149 @@ if ($cp_order->order_status == "confirmed") {
 }
 ?>
 
-<?php if ($order->get_payment_method() == $wc_nekopay->id) : ?>
+<?php if ($order->get_payment_method() == 'nekopay_payment'): ?>
 
-    <input type="hidden" name="cp_order_remaining_time" value="<?php echo esc_html(nekopay_order_remaining_time($order->get_id())); ?>">
+    <input type="hidden" name="cp_order_remaining_time"
+        value="<?php echo esc_html(nekopay_order_remaining_time($order->get_id())); ?>">
     <input type="hidden" name="cp_order_id" value="<?php echo esc_html($order->get_id()); ?>">
     <input type="hidden" name="cp_crypto_type" value="<?php echo esc_html($selected_crypto); ?>">
 
     <div class="cp-order-info">
         <ul class="cp-order-info-list">
-            <li class="cp-order-info-list-item">
-                <?php _e('Order number:', 'woocommerce'); ?>
-                <strong><?php echo esc_html($order->get_order_number()); ?></strong>
+            <li>
+                <strong><?php _e('Amount to Pay:', 'woocommerce-nekopay'); ?></strong>
+                <?php echo esc_html($cp_order->order_in_crypto) . ' ' . strtoupper($cp_order->crypto_type); ?>
             </li>
-
-            <li class="cp-order-info-list-item">
-                <?php _e('Date:', 'woocommerce'); ?>
-                <strong><?php echo wc_format_datetime($order->get_date_created()); ?></strong>
+            <li>
+                <strong><?php _e('Payment Address:', 'woocommerce-nekopay'); ?></strong>
+                <?php echo esc_html($cp_order->payment_address); ?>
             </li>
-
-            <li class="cp-order-info-list-item">
-                <?php _e('Total:', 'woocommerce'); ?>
-                <strong><?php echo esc_html($cp_order->order_in_crypto . " " . strtoupper($selected_crypto) . " (" . $cp_order->order_total . " " . $cp_order->order_default_currency . ")"); ?></strong>
+            <li>
+                <strong><?php _e('Exchange Rate:', 'woocommerce-nekopay'); ?></strong>
+                <?php echo '1 ' . strtoupper($cp_order->crypto_type) . ' = ' . round($cp_order->order_crypto_exchange_rate, 5) . ' ' . $order->get_currency(); ?>
+            </li>
+            <li class="cp-qr-code-holder">
+                <img src="https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=<?php echo esc_attr($cp_order->payment_address); ?>&choe=UTF-8" alt="QR Code" />
             </li>
         </ul>
     </div>
 
-    <?php if ($order->needs_payment()) : ?>
-    <div class="cp-box-wrapper">
-        <div class="cp-box-col-1">
-            <h2><?php echo esc_html($wc_nekopay->method_title); ?></h2>
-            <p class="cp-payment-msg"><?php echo esc_html((nekopay_order_remaining_time($order->get_id()) < 0) ? "The payment time for this order has expired! Do not make any payments as they will be invalid. If you already paid within the allowed time, please wait." : $wc_nekopay->description); ?></p>
+    <?php if ($order->needs_payment()): ?>
+        <div class="cp-box-wrapper">
+            <div class="cp-box-col-1">
+                <h2><?php echo esc_html($wc_nekopay->method_title); ?></h2>
+                <p class="cp-payment-msg">
+                    <?php echo esc_html((nekopay_order_remaining_time($order->get_id()) < 0) ? "The payment time for this order has expired! Do not make any payments as they will be invalid. If you already paid within the allowed time, please wait." : $wc_nekopay->description); ?>
+                </p>
 
-            <div>Amount:</div>
-            <div class="cp-input-box">
-                <input type="text" class="cp-payment-input" value="<?php echo esc_attr($cp_order->order_in_crypto); ?>" readonly>
-                <button type="button" class="cp-copy-btn"><img src="<?php echo plugins_url('/img/cp-copy-icon.svg', __FILE__); ?>" /></button>
+                <div>Amount:</div>
+                <div class="cp-input-box">
+                    <input type="text" class="cp-payment-input" value="<?php echo esc_attr($cp_order->order_in_crypto); ?>"
+                        readonly>
+                    <button type="button" class="cp-copy-btn"><img
+                            src="<?php echo plugins_url('/img/cp-copy-icon.svg', __FILE__); ?>" /></button>
+                </div>
+
+                <br />
+
+                <div>Payment Address:</div>
+                <div class="cp-input-box">
+                    <input type="text" class="cp-payment-input" value="<?php echo esc_attr($payment_address); ?>" readonly>
+                    <button type="button" class="cp-copy-btn"><img
+                            src="<?php echo plugins_url('img/cp-copy-icon.svg', __FILE__); ?>" /></button>
+                </div>
+
+                <br />
+
+                <div class="cp-payment-info-holder">
+                    <div class="cp-counter">00:00</div>
+                    <div class="cp-payment-info">
+                        <div class="cp-payment-info-status">Waiting for payment...</div>
+                        <div class="cp-payment-info-text">Exchange rate locked 1
+                            <?php echo esc_html(strtoupper($selected_crypto)); ?> =
+                            <?php echo esc_html(round($cp_order->order_crypto_exchange_rate, 5) . ' ' . $cp_order->order_default_currency); ?>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <br />
-
-            <div>Payment Address:</div>
-            <div class="cp-input-box">
-                <input type="text" class="cp-payment-input" value="<?php echo esc_attr($payment_address); ?>" readonly>
-                <button type="button" class="cp-copy-btn"><img src="<?php echo plugins_url('img/cp-copy-icon.svg', __FILE__); ?>" /></button>
-            </div>
-
-            <br />
-
-            <div class="cp-payment-info-holder">
-                <div class="cp-counter">00:00</div>
-                <div class="cp-payment-info">
-                    <div class="cp-payment-info-status">Waiting for payment...</div>
-                    <div class="cp-payment-info-text">Exchange rate locked 1 <?php echo esc_html(strtoupper($selected_crypto)); ?> = <?php echo esc_html(round($cp_order->order_crypto_exchange_rate, 5) . ' ' . $cp_order->order_default_currency); ?></div>
+            <div class="cp-box-col-2">
+                <div class="cp-qr-code-holder">
+                    <img
+                        src="https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=<?php echo esc_attr($payment_address); ?>&choe=UTF-8" />
                 </div>
             </div>
         </div>
-        <div class="cp-box-col-2">
-            <div class="cp-qr-code-holder">
-                <img src="https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=<?php echo esc_attr($payment_address); ?>&choe=UTF-8" />
-            </div>
-        </div>
-    </div>
     <?php endif; ?>
 
 <?php else: ?>
 
-<form id="order_review" method="post">
-    <table class="shop_table">
-        <thead>
-            <tr>
-                <th class="product-name"><?php esc_html_e('Product', 'woocommerce'); ?></th>
-                <th class="product-quantity"><?php esc_html_e('Qty', 'woocommerce'); ?></th>
-                <th class="product-total"><?php esc_html_e('Totals', 'woocommerce'); ?></th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($order->get_items() as $item_id => $item) : ?>
-                <?php if (apply_filters('woocommerce_order_item_visible', true, $item)) : ?>
-                    <tr class="<?php echo esc_attr(apply_filters('woocommerce_order_item_class', 'order_item', $item, $order)); ?>">
-                        <td class="product-name">
-                            <?php
+    <form id="order_review" method="post">
+        <table class="shop_table">
+            <thead>
+                <tr>
+                    <th class="product-name"><?php esc_html_e('Product', 'woocommerce'); ?></th>
+                    <th class="product-quantity"><?php esc_html_e('Qty', 'woocommerce'); ?></th>
+                    <th class="product-total"><?php esc_html_e('Totals', 'woocommerce'); ?></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($order->get_items() as $item_id => $item): ?>
+                    <?php if (apply_filters('woocommerce_order_item_visible', true, $item)): ?>
+                        <tr
+                            class="<?php echo esc_attr(apply_filters('woocommerce_order_item_class', 'order_item', $item, $order)); ?>">
+                            <td class="product-name">
+                                <?php
                                 echo apply_filters('woocommerce_order_item_name', esc_html($item->get_name()), $item, false);
                                 do_action('woocommerce_order_item_meta_start', $item_id, $item, $order, false);
                                 wc_display_item_meta($item);
                                 do_action('woocommerce_order_item_meta_end', $item_id, $item, $order, false);
-                            ?>
-                        </td>
-                        <td class="product-quantity"><?php echo apply_filters('woocommerce_order_item_quantity_html', ' <strong class="product-quantity">' . sprintf('&times; %s', esc_html($item->get_quantity())) . '</strong>', $item); ?></td>
-                        <td class="product-subtotal"><?php echo $order->get_formatted_line_subtotal($item); ?></td>
+                                ?>
+                            </td>
+                            <td class="product-quantity">
+                                <?php echo apply_filters('woocommerce_order_item_quantity_html', ' <strong class="product-quantity">' . sprintf('&times; %s', esc_html($item->get_quantity())) . '</strong>', $item); ?>
+                            </td>
+                            <td class="product-subtotal"><?php echo $order->get_formatted_line_subtotal($item); ?></td>
+                        </tr>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </tbody>
+            <tfoot>
+                <?php foreach ($totals as $total): ?>
+                    <tr>
+                        <th scope="row" colspan="2"><?php echo esc_html($total['label']); ?></th>
+                        <td class="product-total"><?php echo esc_html($total['value']); ?></td>
                     </tr>
-                <?php endif; ?>
-            <?php endforeach; ?>
-        </tbody>
-        <tfoot>
-            <?php foreach ($totals as $total) : ?>
-                <tr>
-                    <th scope="row" colspan="2"><?php echo esc_html($total['label']); ?></th>
-                    <td class="product-total"><?php echo esc_html($total['value']); ?></td>
-                </tr>
-            <?php endforeach; ?>
-        </tfoot>
-    </table>
+                <?php endforeach; ?>
+            </tfoot>
+        </table>
 
-    <div id="payment">
-        <?php if ($order->needs_payment()) : ?>
-            <ul class="wc_payment_methods payment_methods methods">
-                <?php
-                if (!empty($available_gateways)) {
-                    foreach ($available_gateways as $gateway) {
-                        wc_get_template('checkout/payment-method.php', array('gateway' => $gateway));
+        <div id="payment">
+            <?php if ($order->needs_payment()): ?>
+                <ul class="wc_payment_methods payment_methods methods">
+                    <?php
+                    if (!empty($available_gateways)) {
+                        foreach ($available_gateways as $gateway) {
+                            wc_get_template('checkout/payment-method.php', array('gateway' => $gateway));
+                        }
+                    } else {
+                        echo '<li class="woocommerce-notice woocommerce-notice--info woocommerce-info">' . apply_filters('woocommerce_no_available_payment_methods_message', __('Sorry, no payment methods are available. Contact support for assistance.', 'woocommerce')) . '</li>';
                     }
-                } else {
-                    echo '<li class="woocommerce-notice woocommerce-notice--info woocommerce-info">' . apply_filters('woocommerce_no_available_payment_methods_message', __('Sorry, no payment methods are available. Contact support for assistance.', 'woocommerce')) . '</li>';
-                }
-                ?>
-            </ul>
-        <?php endif; ?>
-        <div class="form-row">
-            <input type="hidden" name="woocommerce_pay" value="1" />
+                    ?>
+                </ul>
+            <?php endif; ?>
+            <div class="form-row">
+                <input type="hidden" name="woocommerce_pay" value="1" />
 
-            <?php wc_get_template('checkout/terms.php'); ?>
+                <?php wc_get_template('checkout/terms.php'); ?>
 
-            <?php do_action('woocommerce_pay_order_before_submit'); ?>
+                <?php do_action('woocommerce_pay_order_before_submit'); ?>
 
-            <?php echo apply_filters('woocommerce_pay_order_button_html', '<button type="submit" class="button alt" id="place_order" value="' . esc_attr($order_button_text) . '" data-value="' . esc_attr($order_button_text) . '">' . esc_html($order_button_text) . '</button>'); ?>
+                <?php echo apply_filters('woocommerce_pay_order_button_html', '<button type="submit" class="button alt" id="place_order" value="' . esc_attr($order_button_text) . '" data-value="' . esc_attr($order_button_text) . '">' . esc_html($order_button_text) . '</button>'); ?>
 
-            <?php do_action('woocommerce_pay_order_after_submit'); ?>
+                <?php do_action('woocommerce_pay_order_after_submit'); ?>
 
-            <?php wp_nonce_field('woocommerce-pay', 'woocommerce-pay-nonce'); ?>
+                <?php wp_nonce_field('woocommerce-pay', 'woocommerce-pay-nonce'); ?>
+            </div>
         </div>
-    </div>
-</form>
+    </form>
 <?php endif; ?>
