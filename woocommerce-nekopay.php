@@ -9,16 +9,17 @@
     Developer: NekoPay
 */
 
+// Define constants
 const CRYPTO_API_URLS = [
     "dogecash" => "https://widgets.nekosunevr.co.uk/Payment-Checker/DOGEC.php",
-    "zenzo" => "https://widgets.nekosunevr.co.uk/Payment-Checker/ZENZO.php",
-    "flits" => "https://widgets.nekosunevr.co.uk/Payment-Checker/FLITS.php",
-    "pivx" => "https://widgets.nekosunevr.co.uk/Payment-Checker/PIVX.php"
+    "zenzo"    => "https://widgets.nekosunevr.co.uk/Payment-Checker/ZENZO.php",
+    "flits"    => "https://widgets.nekosunevr.co.uk/Payment-Checker/FLITS.php",
+    "pivx"     => "https://widgets.nekosunevr.co.uk/Payment-Checker/PIVX.php"
 ];
 const NEKOPAY_ORDERS_TABLE_NAME = "nekopay_cryptocurrency_orders";
 
-function nekopay_create_transactions_table()
-{
+// Function to create transaction table on plugin activation
+function nekopay_create_transactions_table() {
     global $wpdb;
     $db_table_name = $wpdb->prefix . NEKOPAY_ORDERS_TABLE_NAME;
     $charset_collate = $wpdb->get_charset_collate();
@@ -42,222 +43,132 @@ function nekopay_create_transactions_table()
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     dbDelta($sql);
 }
+register_activation_hook(__FILE__, 'nekopay_create_transactions_table');
 
+// Check WooCommerce dependency and notify if missing
+if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_option('active_plugins'))) || class_exists('WooCommerce')) {
 
-// Check if WooCommerce is active
-$active_plugins = apply_filters('active_plugins', get_option('active_plugins'));
+    // Initialize payment gateway
+    add_action('plugins_loaded', 'nekopay_init_payment_gateway');
+    function nekopay_init_payment_gateway() {
+        require 'WC_NekoPay.php';
+        add_filter('woocommerce_payment_gateways', 'nekopay_add_nekopay_crypto_gateway');
+    }
 
-if (in_array('woocommerce/woocommerce.php', $active_plugins) || class_exists('WooCommerce')) {
-
-    register_activation_hook(__FILE__, 'nekopay_create_transactions_table');
-    add_filter('woocommerce_payment_gateways', 'nekopay_add_nekopay_crypto_gateway');
-
-    function nekopay_add_nekopay_crypto_gateway($gateways)
-    {
+    // Register the payment gateway
+    function nekopay_add_nekopay_crypto_gateway($gateways) {
         $gateways[] = 'WC_NekoPay';
         return $gateways;
     }
 
-    add_action('plugins_loaded', 'nekopay_init_payment_gateway');
-
-    function nekopay_init_payment_gateway()
-    {
-        require 'WC_NekoPay.php';
-    }
 } else {
-    function nekopay_admin_notice()
-    {
-        echo "<div class='error'><p><strong>Please install WooCommerce before using NekoPay Multi-Crypto Payment Gateway.</strong></p></div>";
-        deactivate_plugins(plugin_basename(__FILE__));
-        wp_die();
-    }
+    // Admin notice if WooCommerce is not installed
     add_action('admin_notices', 'nekopay_admin_notice');
+    function nekopay_admin_notice() {
+        echo "<div class='error'><p><strong>Please install WooCommerce before using NekoPay Multi-Crypto Payment Gateway.</strong></p></div>";
+    }
 }
 
-
-// Load plugin scripts
-function nekopay_load_cp_scripts()
-{
+// Enqueue plugin scripts and styles on specific WooCommerce pages
+function nekopay_load_cp_scripts() {
     if (is_wc_endpoint_url('order-pay')) {
         wp_enqueue_style('cp-styles', plugins_url('css/cp-styles.css', __FILE__));
         wp_enqueue_script('cp-script', plugins_url('js/cp-script.js', __FILE__));
     }
 }
+add_action('wp_enqueue_scripts', 'nekopay_load_cp_scripts');
 
-add_action('wp_enqueue_scripts', 'nekopay_load_cp_scripts', 30);
-
-
-// Process order
-function nekopay_process_order($order_id)
-{
-    global $wp;
-    $wc_nekopay = new WC_NekoPay;
-
-    $order_id = $wp->query_vars['order-pay'];
+// Process payment order and store data in database
+function nekopay_process_order($order_id) {
+    global $wp, $wpdb;
     $order = wc_get_order($order_id);
-    $order_status = $order->get_status();
+
+    if (!$order) {
+        return;
+    }
+
+    $wc_nekopay = new WC_NekoPay;
     $crypto_type = $order->get_meta('_nekopay_crypto_type');
-
     $order_crypto_exchange_rate = $wc_nekopay->get_exchange_rate($crypto_type);
-
-    // Redirect if payment is canceled or completed
-    if ($order_status == 'cancelled') {
-        $redirect = $order->get_cancel_order_url();
-        wp_safe_redirect($redirect);
-        exit;
-    }
-
-    if ($order_status == 'processing') {
-        $redirect = $order->get_checkout_order_received_url();
-        wp_safe_redirect($redirect);
-        exit;
-    }
 
     if ($order_crypto_exchange_rate == 0) {
         wc_add_notice('Issue fetching current rates. Please try again.', 'error');
-        wc_print_notices();
-        exit;
+        return;
     }
 
-    if ($order_id > 0 && $order instanceof WC_Order) {
+    $payment_address = $wc_nekopay->get_option($crypto_type . '_address');
+    $order_total = $order->get_total();
+    $order_in_crypto = nekopay_order_total_in_crypto($order_total, $order_crypto_exchange_rate);
+    $order_currency = $order->get_currency();
 
-        global $wpdb;
-        $db_table_name = $wpdb->prefix . NEKOPAY_ORDERS_TABLE_NAME;
-        $count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $db_table_name WHERE order_id = %d", $order_id));
-
-        if ($wpdb->last_error) {
-            wc_add_notice('Error processing your order. Please try again.', 'error');
-            wc_print_notices();
-            exit;
-        }
-
-        if ($count == 0) {
-            $payment_address = $wc_nekopay->payment_address;
-            $order_total = $order->get_total();
-            $order_in_crypto = nekopay_order_total_in_crypto($order_total, $order_crypto_exchange_rate);
-            $order_currency = $order->get_currency();
-
-            $wpdb->insert($db_table_name, array(
-                'transaction_id' => "",
-                'payment_address' => $payment_address,
-                'order_id' => $order_id,
-                'crypto_type' => $crypto_type,
-                'order_total' => $order_total,
-                'order_in_crypto' => $order_in_crypto,
-                'order_default_currency' => $order_currency,
-                'order_crypto_exchange_rate' => $order_crypto_exchange_rate,
-                'order_status' => 'pending',
-                'order_time' => time()
-            ));
-
-            if ($wpdb->last_error) {
-                wc_add_notice('Error processing your order. Please try again.', 'error');
-                wc_print_notices();
-                exit;
-            }
-        }
+    // Insert transaction into database if not already present
+    $table_name = $wpdb->prefix . NEKOPAY_ORDERS_TABLE_NAME;
+    $existing_transaction = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE order_id = %d", $order_id));
+    if ($existing_transaction == 0) {
+        $wpdb->insert($table_name, [
+            'transaction_id'            => "",
+            'payment_address'           => $payment_address,
+            'order_id'                  => $order_id,
+            'crypto_type'               => $crypto_type,
+            'order_total'               => $order_total,
+            'order_in_crypto'           => $order_in_crypto,
+            'order_default_currency'    => $order_currency,
+            'order_crypto_exchange_rate'=> $order_crypto_exchange_rate,
+            'order_status'              => 'pending',
+            'order_time'                => time()
+        ]);
     }
 }
-
 add_action("before_woocommerce_pay", "nekopay_process_order", 20);
 
-
-// Payment Verification
-function nekopay_verify_payment()
-{
+// Verify payment and update order status
+function nekopay_verify_payment() {
     global $wpdb;
-    $db_table_name = $wpdb->prefix . NEKOPAY_ORDERS_TABLE_NAME;
-
-    $wc_nekopay = new WC_NekoPay;
     $order_id = intval(sanitize_text_field($_POST['order_id']));
     $order = wc_get_order($order_id);
 
+    if (!$order) {
+        echo json_encode(["status" => "failed", "message" => "Order not found."]);
+        wp_die();
+    }
+
     $cp_order = nekopay_get_cp_order_info($order_id);
     $crypto_type = $cp_order->crypto_type;
-    $payment_address = $cp_order->payment_address;
-    $transaction_id = $cp_order->transaction_id;
-    $order_in_crypto = $cp_order->order_in_crypto;
-    $confirmation_no = $wc_nekopay->confirmation_no;
-    $order_time = $cp_order->order_time;
-    $max_time_limit = $wc_nekopay->max_time_limit;
-    $plugin_version = $wc_nekopay->plugin_version;
-
     $api_url = CRYPTO_API_URLS[$crypto_type] ?? '';
+
     if (empty($api_url)) {
         echo json_encode(["status" => "failed", "message" => "Invalid cryptocurrency selected"]);
         wp_die();
     }
 
-    $response = wp_remote_get($api_url . "?address=" . $payment_address . "&tx=" . $transaction_id . "&amount=" . $order_in_crypto . "&conf=" . $confirmation_no . "&otime=" . $order_time . "&mtime=" . $max_time_limit . "&pv=" . $plugin_version);
-    $response = wp_remote_retrieve_body($response);
-    $response = json_decode($response);
+    $response = wp_remote_get($api_url . "?address=" . $cp_order->payment_address . "&tx=" . $cp_order->transaction_id . "&amount=" . $cp_order->order_in_crypto . "&conf=" . $cp_order->confirmation_no);
+    $response_body = wp_remote_retrieve_body($response);
+    $response_data = json_decode($response_body);
 
-    if (!empty($response)) {
-        if ($response->status == "invalid") {
-            echo json_encode($response);
-            die();
-        }
+    if ($response_data && $response_data->status == "confirmed") {
+        // Update transaction and order status
+        $wpdb->update($wpdb->prefix . NEKOPAY_ORDERS_TABLE_NAME, [
+            'order_status' => 'confirmed'
+        ], ['order_id' => $order_id]);
 
-        if ($response->status == "expired" && $cp_order->order_status != "expired") {
-            $wpdb->update($db_table_name, ['order_status' => 'expired'], ['order_id' => $order_id]);
-            $order->update_status('cancelled');
-        }
-
-        if ($response->transaction_id != "" && strlen($response->transaction_id) == 64) {
-            $transactions = $wpdb->get_results($wpdb->prepare("SELECT id FROM $db_table_name WHERE transaction_id = %s AND order_id <> %d", $response->transaction_id, $order_id));
-
-            if ($wpdb->last_error) {
-                wc_add_notice('Unable to process the order. Please try again.', 'error');
-                wc_print_notices();
-                exit;
-            }
-
-            if (count($transactions) > 0) {
-                echo json_encode(["status" => "failed"]);
-                die();
-            }
-        }
-
-        if ($response->status == "detected" && empty($cp_order->transaction_id)) {
-            $wpdb->update($db_table_name, [
-                'transaction_id' => $response->transaction_id,
-                'order_status' => 'detected',
-                'confirmation_no' => $response->confirmations
-            ], ['order_id' => $order_id]);
-        }
-
-        if ($response->status == "confirmed" && $cp_order->order_status != "confirmed") {
-            $wpdb->update($db_table_name, [
-                'transaction_id' => $response->transaction_id,
-                'order_status' => 'confirmed',
-                'confirmation_no' => $response->confirmations
-            ], ['order_id' => $order_id]);
-            $order->update_status('processing');
-        }
-    } else {
-        echo json_encode(["status" => "failed"]);
+        $order->update_status('processing');
     }
 
+    echo json_encode($response_data);
     wp_die();
 }
-
 add_action("wp_ajax_nekopay_verify_payment", "nekopay_verify_payment");
 add_action("wp_ajax_nopriv_nekopay_verify_payment", "nekopay_verify_payment");
 
-
-// Retrieve Order Info
-function nekopay_get_cp_order_info($order_id)
-{
+// Retrieve cryptocurrency order info from database
+function nekopay_get_cp_order_info($order_id) {
     global $wpdb;
-    $db_table_name = $wpdb->prefix . NEKOPAY_ORDERS_TABLE_NAME;
-
-    $result = $wpdb->get_results($wpdb->prepare("SELECT * FROM $db_table_name WHERE order_id = %d", $order_id));
-
-    if ($wpdb->last_error) {
-        wc_add_notice('Unable to retrieve order details.', 'error');
-        wc_print_notices();
-        exit;
-    }
-
-    return $result[0];
+    $table_name = $wpdb->prefix . NEKOPAY_ORDERS_TABLE_NAME;
+    return $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE order_id = %d", $order_id));
 }
+
+// Utility to calculate order total in cryptocurrency
+function nekopay_order_total_in_crypto($order_total, $exchange_rate) {
+    return round($order_total / $exchange_rate, 8);
+}
+?>
