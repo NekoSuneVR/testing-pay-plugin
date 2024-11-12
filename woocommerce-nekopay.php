@@ -10,10 +10,10 @@
 */
 
 const CRYPTO_API_URLS = [
-    "dogecash" => "https://payment-checker.chisdealhd.co.uk/DOGEC.php",
-    "zenzo" => "https://payment-checker.chisdealhd.co.uk/ZENZO.php",
-    "flits" => "https://payment-checker.chisdealhd.co.uk/FLITS.php",
-    "pivx" => "https://payment-checker.chisdealhd.co.uk/PIVX.php"
+    "dogecash" => "https://widgets.nekosunevr.co.uk/Payment-Checker/DOGEC.php",
+    "zenzo" => "https://widgets.nekosunevr.co.uk/Payment-Checker/ZENZO.php",
+    "flits" => "https://widgets.nekosunevr.co.uk/Payment-Checker/FLITS.php",
+    "pivx" => "https://widgets.nekosunevr.co.uk/Payment-Checker/PIVX.php"
 ];
 const NEKOPAY_ORDERS_TABLE_NAME = "nekopay_cryptocurrency_orders";
 
