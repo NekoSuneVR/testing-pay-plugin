@@ -62,7 +62,7 @@ jQuery.noConflict();
             cp_interval = null;
 
             $.ajax({
-                url: ajaxurl,
+                url: '/wp-admin/admin-ajax.php',
                 type: "POST",
                 data: {
                     action: "nekopay_verify_payment",

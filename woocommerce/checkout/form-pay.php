@@ -37,7 +37,7 @@ if ($cp_order->order_status == "confirmed") {
 }
 ?>
 
-<?php if ($order->get_payment_method() == 'nekopay_payment'): ?>
+<?php if ($order->get_payment_method() == $wc_nekopay->id): ?>
 
     <input type="hidden" name="cp_order_remaining_time"
         value="<?php echo esc_html(nekopay_order_remaining_time($order->get_id())); ?>">
@@ -46,20 +46,19 @@ if ($cp_order->order_status == "confirmed") {
 
     <div class="cp-order-info">
         <ul class="cp-order-info-list">
-            <li>
-                <strong><?php _e('Amount to Pay:', 'woocommerce-nekopay'); ?></strong>
-                <?php echo esc_html($cp_order->order_in_crypto) . ' ' . strtoupper($cp_order->crypto_type); ?>
+            <li class="cp-order-info-list-item">
+                <?php _e('Order number:', 'woocommerce'); ?>
+                <strong><?php echo esc_html($order->get_order_number()); ?></strong>
             </li>
-            <li>
-                <strong><?php _e('Payment Address:', 'woocommerce-nekopay'); ?></strong>
-                <?php echo esc_html($cp_order->payment_address); ?>
+
+            <li class="cp-order-info-list-item">
+                <?php _e('Date:', 'woocommerce'); ?>
+                <strong><?php echo wc_format_datetime($order->get_date_created()); ?></strong>
             </li>
-            <li>
-                <strong><?php _e('Exchange Rate:', 'woocommerce-nekopay'); ?></strong>
-                <?php echo '1 ' . strtoupper($cp_order->crypto_type) . ' = ' . round($cp_order->order_crypto_exchange_rate, 5) . ' ' . $order->get_currency(); ?>
-            </li>
-            <li class="cp-qr-code-holder">
-                <img src="https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=<?php echo esc_attr($cp_order->payment_address); ?>&choe=UTF-8" alt="QR Code" />
+
+            <li class="cp-order-info-list-item">
+                <?php _e('Total:', 'woocommerce'); ?>
+                <strong><?php echo esc_html($cp_order->order_in_crypto . " " . strtoupper($selected_crypto) . " (" . $cp_order->order_total . " " . $cp_order->order_default_currency . ")"); ?></strong>
             </li>
         </ul>
     </div>
